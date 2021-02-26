@@ -9,18 +9,12 @@
 #include <inttypes.h>
 #include "conf.h"
 
-#if !defined( __POSIX ) && !defined( __WIN )
-static_assert( 0, "We need either __POSIX or __WIN" );
+
+#if !defined( _WIN32 ) && !defined( __linux__ )
+static_assert( 0, "Not supported OS" );
 #endif
 
-#ifdef __POSIX
-#include <sys/ioctl.h>
-#include <unistd.h>
-#endif
 
-#ifdef __WIN
-#include <windows.h>
-#endif
 
 sig_atomic_t keepRunning = true;
 
@@ -34,6 +28,43 @@ typedef struct snake {
   int end;
 } snake;
 
+
+#ifdef __linux__
+#include <sys/ioctl.h>
+#include <unistd.h>
+
+size getTermSize() {
+    struct winsize w;
+    ioctl(STDIN_FILENO, TIOCGWINSZ, &w);
+    return (size) { w.ws_col, w.ws_row };
+}
+
+void sleep_ms(int ms) {
+    usleep(ms * 1000);
+
+
+#endif
+
+#ifdef _WIN32
+#include <windows.h>
+
+size getTermSize() {
+    CONSOLE_SCREEN_BUFFER_INFO buf;
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &buf);
+    return (size) {
+        buf.srWindow.Right - buf.srWindow.Left + 1,
+            buf.srWindow.Bottom - buf.srWindow.Top + 1
+    };
+}
+
+void sleep_ms(int ms) {
+    Sleep(ms);
+}
+
+#endif
+
+
+
 enum {
   SNAKE_STATE_START = 3,
   SNAKE_STATE_MID = 4,
@@ -46,27 +77,7 @@ enum {
 };
 
 #ifdef __POSIX
-size getTermSize() {
-  struct winsize w;
-  ioctl(STDIN_FILENO, TIOCGWINSZ, &w);
-  return (size){ w.ws_col, w.ws_row };
-}
 
-void sleep_ms( int ms ){
-  usleep( ms * 1000 );
-}
-#endif
-
-#ifdef __WIN
-size getTermSize() {
-  CONSOLE_SCREEN_BUFFER_INFO buf;
-  GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &buf);
-  return (size){buf.srWindow.Right - buf.srWindow.Left + 1,
-                buf.srWindow.Bottom - buf.srWindow.Top + 1 };
-}
-
-void sleep_ms( int ms ){
-  Sleep( ms );
 }
 #endif
 

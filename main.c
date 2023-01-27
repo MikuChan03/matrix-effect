@@ -31,7 +31,7 @@ typedef struct size {
 
 typedef struct snake {
   int length;
-  int end;
+  int tip;
 } snake;
 
 enum {
@@ -98,8 +98,9 @@ int main(){
   char * field = malloc( termSize.width * termSize.height );
   snake * snakes = malloc( termSize.width * termSize.height * sizeof(snake) );
   int * snakesInCol = calloc( termSize.width, sizeof(int) );
-  int * snakeStateMap = calloc( ( termSize.height * 5 ) + 1, sizeof(int) );
-  int * snakeStateMapEnd = calloc( ( termSize.height * 5 ) + 1, sizeof(int) );
+  int * snakesInColInd = calloc( termSize.width, sizeof(int) );
+  int * snakeTipMap = calloc( ( termSize.height * 5 ) + 1, sizeof(int) );
+  int * snakeEndMap = calloc( ( termSize.height * 5 ) + 1, sizeof(int) );
 
   if( termSize.width == 0 || termSize.height == 0 ){
     fprintf( stderr, "pwease don't wediwect anything, othewise we don't know the tewminal dimensions UwU\n" );
@@ -113,21 +114,18 @@ int main(){
   strcpy( str, "\033[38;2;8;202;40m" );
   strcpy( strWhite, "\033[38;2;255;255;255m" );
 
-  snakeStateMap += termSize.height;  /* NANI!? */
-  snakeStateMap[-termSize.height] = SNAKE_STATE_START;
-  snakeStateMap[0] = SNAKE_STATE_END;
+  snakeTipMap[0] = SNAKE_STATE_START;
+  snakeTipMap[termSize.height] = SNAKE_STATE_END;
 
-  for( int i = -termSize.height + 1; i < 0; i++ ){
-    snakeStateMap[i] = SNAKE_STATE_MID;
+  for( int i = 1; i < termSize.height; i++ ){
+    snakeTipMap[i] = SNAKE_STATE_MID;
   }
-  /* SNAKE_STATE_PAST is set by calloc */
 
-
-  snakeStateMapEnd += ( termSize.height * 4 );
+  snakeEndMap += ( termSize.height * 4 );
   for( int i = 0; i < termSize.height; i++ ){
-    snakeStateMapEnd[i] = 1;
+    snakeEndMap[i] = 1;
   }
-  snakeStateMapEnd[termSize.height] = 2;
+  snakeEndMap[termSize.height] = 2;
 
   while( keepRunning ){
     int strInd = sizeof( "\033[38;2;8;202;40m" ) - 1;
@@ -135,55 +133,68 @@ int main(){
     char c;
 
     for( int i = 0; i < termSize.width; i++ ){
-      snake * snks = snakes + ( i * termSize.height );
       char * fld = field + ( i * termSize.height );
+      snake * snks = snakes + ( i * termSize.height );
+      snake * highestSnake = snks + ((snakesInColInd[i] + (snakesInCol[i] - 1)) % termSize.height);
+      int lowestSnakeDied = 0;
 
-      if( (snakesInCol[i]==0 || (snks[0].end - snks[0].length >=SNAKES_MIN_GAP))
+      if( (snakesInCol[i]==0 || (highestSnake->tip - highestSnake->length >= SNAKES_MIN_GAP))
           && chance(SNAKES_LIKELIHOOD) ){
 
-        memmove(snks + 1, snks, snakesInCol[i] * sizeof(snake));
-        snakesInCol[i]++;
+        snake * newSnake = highestSnake + 1;
+        /* both snakes lengths are inclusive */
+        int lengthPercent = (rand() % (SNAKES_LENGTH_MAX - SNAKES_LENGTH_MIN + 1))
+                            + SNAKES_LENGTH_MIN;
 
-        int percent = (rand() % (SNAKES_LENGTH_MAX - SNAKES_LENGTH_MIN + 1))
-                        + SNAKES_LENGTH_MIN;
-        snks[0].length = termSize.height * (percent / 100.0);
-        snks[0].end = 0;
+        newSnake->length = termSize.height * (lengthPercent / 100.0);
+        if(newSnake->length < 2){
+          newSnake->length = 2;
+        }
+        newSnake->tip = 0;
+        snakesInCol[i]++;
       }
 
-      for( int j = snakesInCol[i] - 1; j >= 0; j-- ){
-        switch( snakeStateMap[snks[j].end - termSize.height]
-              + snakeStateMapEnd[snks[j].end - snks[j].length] ){
+      for( int j = 0; j < snakesInCol[i]; j++ ){
+        snake * currentSnake = snks + ((snakesInColInd[i] + j) % termSize.height);
+
+        switch(snakeTipMap[currentSnake->tip] + snakeEndMap[currentSnake->tip - currentSnake->length]){
           case SNAKE_STATE_START:
             c = getRandChar();
-            fld[snks[j].end] = c;
-            strWhtInd += sprintf(strWhite + strWhtInd, "\033[%i;%iH%c", snks[j].end+1, i+1, c);
+            fld[currentSnake->tip] = c;
+            strWhtInd += sprintf(strWhite + strWhtInd, "\033[%i;%iH%c", currentSnake->tip+1, i+1, c);
           break;
 
           case SNAKE_STATE_MID_CLEAN:
-            strInd += sprintf(str + strInd, "\033[%i;%iH%c", (snks[j].end - snks[j].length)+1, i+1, ' ');
+            strInd += sprintf(str + strInd, "\033[%i;%iH%c", (currentSnake->tip - currentSnake->length)+1, i+1, ' ');
           case SNAKE_STATE_MID:
             c = getRandChar();
-            fld[snks[j].end] = c;
-            strWhtInd += sprintf(strWhite + strWhtInd, "\033[%i;%iH%c", snks[j].end+1, i+1, c);
-            strInd += sprintf(str + strInd, "\033[%i;%iH%c", snks[j].end, i+1, fld[snks[j].end-1]);
+            fld[currentSnake->tip] = c;
+            strWhtInd += sprintf(strWhite + strWhtInd, "\033[%i;%iH%c", currentSnake->tip+1, i+1, c);
+            strInd += sprintf(str + strInd, "\033[%i;%iH%c", currentSnake->tip, i+1, fld[currentSnake->tip-1]);
           break;
 
           case SNAKE_STATE_END_CLEAN:
-            strInd += sprintf(str + strInd, "\033[%i;%iH%c", (snks[j].end - snks[j].length)+1, i+1, ' ');
+            strInd += sprintf(str + strInd, "\033[%i;%iH%c", (currentSnake->tip - currentSnake->length)+1, i+1, ' ');
           case SNAKE_STATE_END:
-            strInd += sprintf(str + strInd, "\033[%i;%iH%c", snks[j].end, i+1, fld[snks[j].end-1]);
+            strInd += sprintf(str + strInd, "\033[%i;%iH%c", currentSnake->tip, i+1, fld[currentSnake->tip-1]);
           break;
 
           case SNAKE_STATE_PAST_CLEAN:
-            strInd += sprintf(str + strInd, "\033[%i;%iH%c", (snks[j].end - snks[j].length)+1, i+1, ' ');
+            strInd += sprintf(str + strInd, "\033[%i;%iH%c", (currentSnake->tip - currentSnake->length)+1, i+1, ' ');
           break;
 
           case SNAKE_STATE_PAST_DEATH:
-            snakesInCol[i]--; /* The snake has finally outlived it's usefulness ... */
+            /* The snake has finally outlived it's usefulness ... */
+            lowestSnakeDied = 1;
           break;
         }
 
-        snks[j].end++;
+        currentSnake->tip++;
+      }
+
+      if(lowestSnakeDied){
+        snakesInColInd[i] = (snakesInColInd[i] + 1) % termSize.height;
+        snakesInCol[i]--;
       }
     }
 
@@ -200,7 +211,10 @@ int main(){
   free(field);
   free(snakes);
   free(snakesInCol);
-  free(snakeStateMap - termSize.height);
-  free(snakeStateMapEnd - ( termSize.height * 4 ));
+  free(snakesInColInd);
+  free(snakeTipMap);
+  free(snakeEndMap - ( termSize.height * 4 ));
   return 0;
 }
+
+

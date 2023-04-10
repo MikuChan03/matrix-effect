@@ -135,13 +135,20 @@ int main(){
     for( int i = 0; i < termSize.width; i++ ){
       char * fld = field + ( i * termSize.height );
       snake * snks = snakes + ( i * termSize.height );
-      snake * highestSnake = snks + ((snakesInColInd[i] + (snakesInCol[i] - 1)) % termSize.height);
+      int newSnakeInd = (snakesInColInd[i] + snakesInCol[i]) % termSize.height;
+      snake * newSnake = snks + newSnakeInd;
+      snake * furthestSnake = NULL;
       int lowestSnakeDied = 0;
 
-      if( (snakesInCol[i]==0 || (highestSnake->tip - highestSnake->length >= SNAKES_MIN_GAP))
+      if(newSnakeInd == 0){
+        furthestSnake = snks + termSize.height - 1;
+      }else{
+        furthestSnake = snks + newSnakeInd - 1;
+      }
+
+      if( (snakesInCol[i]==0 || (furthestSnake->tip - furthestSnake->length >= SNAKES_MIN_GAP))
           && chance(SNAKES_LIKELIHOOD) ){
 
-        snake * newSnake = highestSnake + 1;
         /* both snakes lengths are inclusive */
         int lengthPercent = (rand() % (SNAKES_LENGTH_MAX - SNAKES_LENGTH_MIN + 1))
                             + SNAKES_LENGTH_MIN;

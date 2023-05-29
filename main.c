@@ -137,16 +137,16 @@ int main(){
       snake * snks = snakes + ( i * termSize.height );
       int newSnakeInd = (snakesInColInd[i] + snakesInCol[i]) % termSize.height;
       snake * newSnake = snks + newSnakeInd;
-      snake * furthestSnake = NULL;
+      snake * highestSnake = NULL;
       int lowestSnakeDied = 0;
 
       if(newSnakeInd == 0){
-        furthestSnake = snks + termSize.height - 1;
+        highestSnake = snks + termSize.height - 1;
       }else{
-        furthestSnake = snks + newSnakeInd - 1;
+        highestSnake = snks + newSnakeInd - 1;
       }
 
-      if( (snakesInCol[i]==0 || (furthestSnake->tip - furthestSnake->length >= SNAKES_MIN_GAP))
+      if( (snakesInCol[i]==0 || (highestSnake->tip - highestSnake->length >= SNAKES_MIN_GAP))
           && chance(SNAKES_LIKELIHOOD) ){
 
         /* both snakes lengths are inclusive */

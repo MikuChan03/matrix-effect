@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,76 +8,76 @@
 #include <inttypes.h>
 #include "conf.h"
 
-#if !defined( __POSIX ) && !defined( __WIN )
-static_assert( 0, "We need either __POSIX or __WIN" );
+#if !defined( __POSIX ) && !defined( __WIN ) && !defined(__POSIWIX) && !defined(__WINWIN)
+static_assert( 0, "We need either __POSIX, __POSIWIX, __WIN or __WINWIN" );
 #endif
 
-#ifdef __POSIX
+#if defined(__POSIX) || defined(__POSIWIX)
 #include <sys/ioctl.h>
 #include <unistd.h>
 #endif
 
-#ifdef __WIN
+#if defined(__WIN) || defined(__WINWIN)
 #include <windows.h>
 #endif
 
-sig_atomic_t keepRunning = true;
+sig_atomic_t keepRunnywun = true;
 
-typedef struct size {
+typedef struct sizeySize {
   int width;
   int height;
-} size;
+} sizeySize;
 
-typedef struct snake {
+typedef struct snakeySnake {
   int length;
   int tip;
-} snake;
+} snakeySnake;
 
 enum {
-  SNAKE_STATE_START = 3,
-  SNAKE_STATE_MID = 4,
-  SNAKE_STATE_MID_CLEAN = 5,
-  SNAKE_STATE_END = 6,
-  SNAKE_STATE_END_CLEAN = 7,
-  SNAKE_STATE_PAST = 0,
-  SNAKE_STATE_PAST_CLEAN = 1,
-  SNAKE_STATE_PAST_DEATH = 2
+  SNAKEY_STATEY_STARTY = 3,
+  SNAKEY_STATEY_MIDY = 4,
+  SNAKEY_STATEY_MIDY_CLEAN = 5,
+  SNAKEY_STATEY_ENDY = 6,
+  SNAKEY_STATEY_ENDY_CLEAN = 7,
+  SNAKEY_STATEY_PASTY = 0,
+  SNAKEY_STATEY_PASTY_CLEAN = 1,
+  SNAKEY_STATEY_PASTY_DEATH = 2
 };
 
-#ifdef __POSIX
-size getTermSize() {
+#if defined(__POSIX) || defined(__POSIWIX)
+sizeySize getTermSizeySize() {
   struct winsize w;
   ioctl(STDIN_FILENO, TIOCGWINSZ, &w);
-  return (size){ w.ws_col, w.ws_row };
+  return (sizeySize){ w.ws_col, w.ws_row };
 }
 
-void sleep_ms( int ms ){
+void sleepySleep_ms( int ms ){
   usleep( ms * 1000 );
 }
 #endif
 
-#ifdef __WIN
-size getTermSize() {
+#if defined(__WIN) || defined(__WINWIN)
+sizeySize getTermSizeySize() {
   CONSOLE_SCREEN_BUFFER_INFO buf;
   GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &buf);
-  return (size){buf.srWindow.Right - buf.srWindow.Left + 1,
+  return (sizeySize){buf.srWindow.Right - buf.srWindow.Left + 1,
                 buf.srWindow.Bottom - buf.srWindow.Top + 1 };
 }
 
-void sleep_ms( int ms ){
+void sleepySleep_ms( int ms ){
   Sleep( ms );
 }
 #endif
 
-long int getNanosecs(){
+long int getNanosecsyNanosecs(){
   struct timespec ts;
   timespec_get(&ts, TIME_UTC);
   return ts.tv_nsec;
 }
 
-int chance( int percent ){
+int chanceyChance( int percentyPercent ){
            /* 0 - 99 */
-  return ( rand() % 100 ) < percent;
+  return ( rand() % 100 ) < percentyPercent;
 }
 
 char getRandChar(){
@@ -87,57 +86,57 @@ char getRandChar(){
 
 void userHadEnough(int ja){
   (void)ja;
-  keepRunning = false;
+  keepRunnywun = false;
   signal(SIGINT, SIG_IGN);
 }
 
 int main(){
-  size termSize = getTermSize();
-  char * str = malloc( 1024 * 1024 ); /* One Megabyte more or less */
-  char * strWhite = malloc( 1024 * 1024 ); /* One Megabyte more or less */
+  sizeySize termSize = getTermSizeySize();
+  char * str = malloc( 1024 * 1024 ); /* One MwegaByte mowe or less */
+  char * strWhite = malloc( 1024 * 1024 ); /* One MwegaByte mowe or less */
   char * field = malloc( termSize.width * termSize.height );
-  snake * snakes = malloc( termSize.width * termSize.height * sizeof(snake) );
-  int * snakesInCol = calloc( termSize.width, sizeof(int) );
-  int * snakesInColInd = calloc( termSize.width, sizeof(int) );
-  int * snakeTipMap = calloc( ( termSize.height * 5 ) + 1, sizeof(int) );
-  int * snakeEndMap = calloc( ( termSize.height * 5 ) + 1, sizeof(int) );
+  snakeySnake * snakeySnakes = malloc( termSize.width * termSize.height * sizeof(snakeySnake) );
+  int * snakesySnakesInColyCol = calloc( termSize.width, sizeof(int) );
+  int * snakesySnakesInColyColIndyInd = calloc( termSize.width, sizeof(int) );
+  int * snakeySnakeTipyTipMap = calloc( ( termSize.height * 5 ) + 1, sizeof(int) );
+  int * snakeySnakeEndyEndMap = calloc( ( termSize.height * 5 ) + 1, sizeof(int) );
 
   if( termSize.width == 0 || termSize.height == 0 ){
     fprintf( stderr, "pwease don't wediwect anything, othewise we don't know the tewminal dimensions UwU\n" );
     return 1;
   }
 
-  srand( getNanosecs() );
+  srand( getNanosecsyNanosecs() );
   signal(SIGINT, userHadEnough);
   printf( "\033[2J\033[?25l" );
 
   strcpy( str, "\033[38;2;8;202;40m" );
   strcpy( strWhite, "\033[38;2;255;255;255m" );
 
-  snakeTipMap[0] = SNAKE_STATE_START;
-  snakeTipMap[termSize.height] = SNAKE_STATE_END;
+  snakeySnakeTipyTipMap[0] = SNAKEY_STATEY_STARTY;
+  snakeySnakeTipyTipMap[termSize.height] = SNAKEY_STATEY_ENDY;
 
   for( int i = 1; i < termSize.height; i++ ){
-    snakeTipMap[i] = SNAKE_STATE_MID;
+    snakeySnakeTipyTipMap[i] = SNAKEY_STATEY_MIDY;
   }
 
-  snakeEndMap += ( termSize.height * 4 );
+  snakeySnakeEndyEndMap += ( termSize.height * 4 );
   for( int i = 0; i < termSize.height; i++ ){
-    snakeEndMap[i] = 1;
+    snakeySnakeEndyEndMap[i] = 1;
   }
-  snakeEndMap[termSize.height] = 2;
+  snakeySnakeEndyEndMap[termSize.height] = 2;
 
-  while( keepRunning ){
+  while( keepRunnywun ){
     int strInd = sizeof( "\033[38;2;8;202;40m" ) - 1;
     int strWhtInd = sizeof( "\033[38;2;255;255;255m" ) - 1;
     char c;
 
     for( int i = 0; i < termSize.width; i++ ){
       char * fld = field + ( i * termSize.height );
-      snake * snks = snakes + ( i * termSize.height );
-      int newSnakeInd = (snakesInColInd[i] + snakesInCol[i]) % termSize.height;
-      snake * newSnake = snks + newSnakeInd;
-      snake * highestSnake = NULL;
+      snakeySnake * snks = snakeySnakes + ( i * termSize.height );
+      int newSnakeInd = (snakesySnakesInColyColIndyInd[i] + snakesySnakesInColyCol[i]) % termSize.height;
+      snakeySnake * newSnake = snks + newSnakeInd;
+      snakeySnake * highestSnake = NULL;
       int lowestSnakeDied = 0;
 
       if(newSnakeInd == 0){
@@ -146,10 +145,10 @@ int main(){
         highestSnake = snks + newSnakeInd - 1;
       }
 
-      if( (snakesInCol[i]==0 || (highestSnake->tip - highestSnake->length >= SNAKES_MIN_GAP))
-          && chance(SNAKES_LIKELIHOOD) ){
+      if( (snakesySnakesInColyCol[i]==0 || (highestSnake->tip - highestSnake->length >= SNAKES_MIN_GAP))
+          && chanceyChance(SNAKES_LIKELIHOOD) ){
 
-        /* both snakes lengths are inclusive */
+        /* both snakeySnakes lengths are inclusive */
         int lengthPercent = (rand() % (SNAKES_LENGTH_MAX - SNAKES_LENGTH_MIN + 1))
                             + SNAKES_LENGTH_MIN;
 
@@ -158,57 +157,57 @@ int main(){
           newSnake->length = 2;
         }
         newSnake->tip = 0;
-        snakesInCol[i]++;
+        snakesySnakesInColyCol[i]++;
       }
 
-      for( int j = 0; j < snakesInCol[i]; j++ ){
-        snake * currentSnake = snks + ((snakesInColInd[i] + j) % termSize.height);
+      for( int j = 0; j < snakesySnakesInColyCol[i]; j++ ){
+        snakeySnake * currentSnakeySnake = snks + ((snakesySnakesInColyColIndyInd[i] + j) % termSize.height);
 
-        switch(snakeTipMap[currentSnake->tip] + snakeEndMap[currentSnake->tip - currentSnake->length]){
-          case SNAKE_STATE_START:
+        switch(snakeySnakeTipyTipMap[currentSnakeySnake->tip] + snakeySnakeEndyEndMap[currentSnakeySnake->tip - currentSnakeySnake->length]){
+          case SNAKEY_STATEY_STARTY:
             c = getRandChar();
-            fld[currentSnake->tip] = c;
-            strWhtInd += sprintf(strWhite + strWhtInd, "\033[%i;%iH%c", currentSnake->tip+1, i+1, c);
+            fld[currentSnakeySnake->tip] = c;
+            strWhtInd += sprintf(strWhite + strWhtInd, "\033[%i;%iH%c", currentSnakeySnake->tip+1, i+1, c);
           break;
 
-          case SNAKE_STATE_MID_CLEAN:
-            strInd += sprintf(str + strInd, "\033[%i;%iH%c", (currentSnake->tip - currentSnake->length)+1, i+1, ' ');
-          case SNAKE_STATE_MID:
+          case SNAKEY_STATEY_MIDY_CLEAN:
+            strInd += sprintf(str + strInd, "\033[%i;%iH%c", (currentSnakeySnake->tip - currentSnakeySnake->length)+1, i+1, ' ');
+          case SNAKEY_STATEY_MIDY:
             c = getRandChar();
-            fld[currentSnake->tip] = c;
-            strWhtInd += sprintf(strWhite + strWhtInd, "\033[%i;%iH%c", currentSnake->tip+1, i+1, c);
-            strInd += sprintf(str + strInd, "\033[%i;%iH%c", currentSnake->tip, i+1, fld[currentSnake->tip-1]);
+            fld[currentSnakeySnake->tip] = c;
+            strWhtInd += sprintf(strWhite + strWhtInd, "\033[%i;%iH%c", currentSnakeySnake->tip+1, i+1, c);
+            strInd += sprintf(str + strInd, "\033[%i;%iH%c", currentSnakeySnake->tip, i+1, fld[currentSnakeySnake->tip-1]);
           break;
 
-          case SNAKE_STATE_END_CLEAN:
-            strInd += sprintf(str + strInd, "\033[%i;%iH%c", (currentSnake->tip - currentSnake->length)+1, i+1, ' ');
-          case SNAKE_STATE_END:
-            strInd += sprintf(str + strInd, "\033[%i;%iH%c", currentSnake->tip, i+1, fld[currentSnake->tip-1]);
+          case SNAKEY_STATEY_ENDY_CLEAN:
+            strInd += sprintf(str + strInd, "\033[%i;%iH%c", (currentSnakeySnake->tip - currentSnakeySnake->length)+1, i+1, ' ');
+          case SNAKEY_STATEY_ENDY:
+            strInd += sprintf(str + strInd, "\033[%i;%iH%c", currentSnakeySnake->tip, i+1, fld[currentSnakeySnake->tip-1]);
           break;
 
-          case SNAKE_STATE_PAST_CLEAN:
-            strInd += sprintf(str + strInd, "\033[%i;%iH%c", (currentSnake->tip - currentSnake->length)+1, i+1, ' ');
+          case SNAKEY_STATEY_PASTY_CLEAN:
+            strInd += sprintf(str + strInd, "\033[%i;%iH%c", (currentSnakeySnake->tip - currentSnakeySnake->length)+1, i+1, ' ');
           break;
 
-          case SNAKE_STATE_PAST_DEATH:
-            /* The snake has finally outlived it's usefulness ... */
+          case SNAKEY_STATEY_PASTY_DEATH:
+            /* The snakeySnake has finally outlived it's usefulness ... */
             lowestSnakeDied = 1;
           break;
         }
 
-        currentSnake->tip++;
+        currentSnakeySnake->tip++;
       }
 
       if(lowestSnakeDied){
-        snakesInColInd[i] = (snakesInColInd[i] + 1) % termSize.height;
-        snakesInCol[i]--;
+        snakesySnakesInColyColIndyInd[i] = (snakesySnakesInColyColIndyInd[i] + 1) % termSize.height;
+        snakesySnakesInColyCol[i]--;
       }
     }
 
     fwrite( str, 1, strInd, stdout );
     fwrite( strWhite, 1, strWhtInd, stdout );
     fflush( stdout );
-    sleep_ms( SNAKES_SPEED );
+    sleepySleep_ms( SNAKES_SPEED );
   }
 
   printf( "\033[1;1H\033[2J\033[?25h\033[m" );
@@ -216,12 +215,10 @@ int main(){
   free(str);
   free(strWhite);
   free(field);
-  free(snakes);
-  free(snakesInCol);
-  free(snakesInColInd);
-  free(snakeTipMap);
-  free(snakeEndMap - ( termSize.height * 4 ));
+  free(snakeySnakes);
+  free(snakesySnakesInColyCol);
+  free(snakesySnakesInColyColIndyInd);
+  free(snakeySnakeTipyTipMap);
+  free(snakeySnakeEndyEndMap - ( termSize.height * 4 ));
   return 0;
 }
-
-
